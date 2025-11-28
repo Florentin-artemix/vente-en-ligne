@@ -1,0 +1,5 @@
+# Firebase credentials (ne pas commiter)
+Microservice/UsersService/vente-en-ligne-13622-firebase-adminsdk-fbsvc-076080c9a0.json
+Microservice/UsersService/src/main/resources/firebase-service-account.json
+frontend/.env
+*.json.bak

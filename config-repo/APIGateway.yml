@@ -1,0 +1,57 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: APIGateway
+  cloud:
+    gateway:
+      routes:
+        - id: users-service
+          uri: lb://UsersService
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - StripPrefix=1
+        
+        - id: produit-service
+          uri: lb://ProduitService
+          predicates:
+            - Path=/api/produits/**
+          filters:
+            - StripPrefix=1
+        
+        - id: carte-service
+          uri: lb://CarteService
+          predicates:
+            - Path=/api/carte/**
+          filters:
+            - StripPrefix=1
+        
+        - id: order-service
+          uri: lb://OrderService
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=1
+        
+        - id: paiement-service
+          uri: lb://paiement
+          predicates:
+            - Path=/api/paiements/**
+          filters:
+            - StripPrefix=1
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: false
+    hostname: api-gateway
