@@ -6,41 +6,45 @@ spring:
     name: APIGateway
   cloud:
     gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns: 
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
       routes:
         - id: users-service
           uri: lb://UsersService
           predicates:
             - Path=/api/users/**
-          filters:
-            - StripPrefix=1
         
         - id: produit-service
           uri: lb://ProduitService
           predicates:
             - Path=/api/produits/**
-          filters:
-            - StripPrefix=1
         
         - id: carte-service
           uri: lb://CarteService
           predicates:
             - Path=/api/carte/**
-          filters:
-            - StripPrefix=1
         
         - id: order-service
           uri: lb://OrderService
           predicates:
             - Path=/api/orders/**
-          filters:
-            - StripPrefix=1
         
         - id: paiement-service
           uri: lb://paiement
           predicates:
             - Path=/api/paiements/**
-          filters:
-            - StripPrefix=1
       discovery:
         locator:
           enabled: true
@@ -55,3 +59,13 @@ eureka:
   instance:
     prefer-ip-address: false
     hostname: api-gateway
+
+# Firebase configuration
+firebase:
+  credentials:
+    path: firebase-credentials.json
+
+# Logging for security
+logging:
+  level:
+    com.example.venteEnLigne.APIGateway.filter: DEBUG

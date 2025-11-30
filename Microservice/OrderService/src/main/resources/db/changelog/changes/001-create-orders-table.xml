@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001" author="system">
+        <createTable tableName="orders">
+            <column name="id" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant_total" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(3)" defaultValue="USD">
+                <constraints nullable="false"/>
+            </column>
+            <column name="paiement_status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="order_status" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            
+            <!-- Adresse de livraison (embeddable) -->
+            <column name="livraison_pays" type="VARCHAR(100)"/>
+            <column name="livraison_province" type="VARCHAR(100)"/>
+            <column name="livraison_ville" type="VARCHAR(100)"/>
+            <column name="livraison_commune" type="VARCHAR(100)"/>
+            <column name="livraison_quartier" type="VARCHAR(100)"/>
+            <column name="livraison_avenue" type="VARCHAR(200)"/>
+            <column name="livraison_reference" type="VARCHAR(255)"/>
+            <column name="livraison_telephone" type="VARCHAR(20)"/>
+            <column name="livraison_nom_destinataire" type="VARCHAR(255)"/>
+            
+            <column name="notes" type="TEXT"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_orders_user_id" tableName="orders">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_orders_order_status" tableName="orders">
+            <column name="order_status"/>
+        </createIndex>
+
+        <createIndex indexName="idx_orders_paiement_status" tableName="orders">
+            <column name="paiement_status"/>
+        </createIndex>
+
+        <createIndex indexName="idx_orders_created_at" tableName="orders">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

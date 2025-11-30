@@ -1,7 +1,6 @@
 package com.example.venteEnLigne.UsersService.service;
 
 import com.example.venteEnLigne.UsersService.dto.*;
-import com.example.venteEnLigne.UsersService.model.User;
 
 import java.util.List;
 

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="001-create-paiements-table" author="venteEnLigne">
+        <createTable tableName="paiements">
+            <column name="id" type="VARCHAR(36)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="order_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="montant" type="DECIMAL(10,2)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="currency" type="VARCHAR(10)" defaultValue="USD">
+                <constraints nullable="false"/>
+            </column>
+            <column name="methode" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="VARCHAR(20)" defaultValue="EN_ATTENTE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_reference" type="VARCHAR(100)">
+                <constraints unique="true"/>
+            </column>
+            <column name="provider_response" type="JSONB"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP"/>
+        </createTable>
+
+        <createIndex indexName="idx_paiements_order_id" tableName="paiements">
+            <column name="order_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_paiements_user_id" tableName="paiements">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_paiements_status" tableName="paiements">
+            <column name="status"/>
+        </createIndex>
+
+        <createIndex indexName="idx_paiements_transaction_ref" tableName="paiements">
+            <column name="transaction_reference"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

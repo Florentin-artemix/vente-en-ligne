@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: APIGateway
+  config:
+    import: optional:configserver:${SPRING_CLOUD_CONFIG_URI:http://localhost:8888}
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          '[/**]':
+            allowedOriginPatterns:
+              - "http://localhost:*"
+              - "http://127.0.0.1:*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: users-service
+          uri: lb://UsersService
+          predicates:
+            - Path=/api/users/**
+        
+        - id: produit-service
+          uri: lb://ProduitService
+          predicates:
+            - Path=/api/produits/**
+        
+        - id: carte-service
+          uri: lb://CarteService
+          predicates:
+            - Path=/api/carte/**
+        
+        - id: order-service
+          uri: lb://OrderService
+          predicates:
+            - Path=/api/orders/**
+        
+        - id: paiement-service
+          uri: lb://paiement
+          predicates:
+            - Path=/api/paiements/**
+      discovery:
+        locator:
+          enabled: true
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+server:
+  port: 8080
