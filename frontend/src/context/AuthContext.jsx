@@ -39,10 +39,16 @@ export const AuthProvider = ({ children }) => {
       
       // Récupérer le profil utilisateur depuis notre backend
       const profile = await userService.verifyToken(token);
-      setUserProfile(profile);
+      console.log('Profil récupéré depuis le backend:', profile);
       
-      return { user: userCredential.user, profile };
+      // Mapper id vers uid pour cohérence avec Firebase
+      const normalizedProfile = { ...profile, uid: profile.id || profile.uid };
+      console.log('Profil normalisé:', normalizedProfile);
+      setUserProfile(normalizedProfile);
+      
+      return { user: userCredential.user, profile: normalizedProfile };
     } catch (error) {
+      console.error('Erreur login:', error);
       throw error;
     }
   };
@@ -59,6 +65,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Rafraîchir le profil utilisateur
+  const refreshUserProfile = async () => {
+    if (!currentUser) return null;
+    try {
+      const token = await currentUser.getIdToken(true); // Force refresh token
+      localStorage.setItem('authToken', token);
+      const profile = await userService.verifyToken(token);
+      const normalizedProfile = { ...profile, uid: profile.id || profile.uid };
+      setUserProfile(normalizedProfile);
+      return normalizedProfile;
+    } catch (error) {
+      console.error('Erreur lors du rafraîchissement du profil:', error);
+      throw error;
+    }
+  };
+
   // Observer les changements d'authentification
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -69,9 +91,19 @@ export const AuthProvider = ({ children }) => {
           const token = await user.getIdToken();
           localStorage.setItem('authToken', token);
           const profile = await userService.verifyToken(token);
-          setUserProfile(profile);
+          // Mapper id vers uid pour cohérence avec Firebase
+          const normalizedProfile = { ...profile, uid: profile.id || profile.uid };
+          setUserProfile(normalizedProfile);
         } catch (error) {
           console.error('Erreur lors de la récupération du profil:', error);
+          // En cas d'erreur, utiliser au moins les données Firebase de base
+          setUserProfile({
+            uid: user.uid,
+            email: user.email,
+            prenom: user.displayName?.split(' ')[0] || '',
+            nom: user.displayName?.split(' ').slice(1).join(' ') || '',
+            photoProfil: user.photoURL || ''
+          });
         }
       } else {
         setUserProfile(null);
@@ -89,6 +121,7 @@ export const AuthProvider = ({ children }) => {
     register,
     login,
     logout,
+    refreshUserProfile,
     loading
   };
 

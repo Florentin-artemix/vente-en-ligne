@@ -33,7 +33,14 @@ const DashboardClient = () => {
   
   // États pour le profil
   const [editProfile, setEditProfile] = useState(false);
-  const [profileData, setProfileData] = useState({});
+  const [profileData, setProfileData] = useState({
+    prenom: '',
+    nom: '',
+    email: '',
+    telephone: '',
+    photoProfil: '',
+    adresse: {}
+  });
   const [profileLoading, setProfileLoading] = useState(false);
   const [photoPreview, setPhotoPreview] = useState(null);
   
@@ -64,10 +71,29 @@ const DashboardClient = () => {
         loadProduits(),
         loadCart(),
         loadOrders(),
-        loadPaiements()
+        loadPaiements(),
+        loadUserProfile()
       ]).catch(console.error);
-      
-      // Initialiser les données du profil
+    }
+  }, [userProfile?.uid]);
+
+  // Charger les données du profil utilisateur depuis le backend
+  const loadUserProfile = useCallback(async () => {
+    if (!userProfile?.uid) return;
+    try {
+      const userData = await userService.getUserById(userProfile.uid);
+      console.log('Données utilisateur chargées:', userData);
+      setProfileData({
+        prenom: userData.prenom || userProfile.prenom || '',
+        nom: userData.nom || userProfile.nom || '',
+        email: userData.email || userProfile.email || '',
+        telephone: userData.telephone || userProfile.telephone || '',
+        photoProfil: userData.photoProfil || userProfile.photoProfil || '',
+        adresse: userData.adresse || userProfile.adresse || {}
+      });
+    } catch (error) {
+      console.error('Erreur chargement profil:', error);
+      // Fallback vers userProfile
       setProfileData({
         prenom: userProfile.prenom || '',
         nom: userProfile.nom || '',
@@ -408,7 +434,9 @@ const DashboardClient = () => {
   const handleUpdateProfile = async () => {
     setProfileLoading(true);
     try {
-      await userService.updateUser(userProfile.id, {
+      // Utiliser uid ou id selon ce qui est disponible
+      const userId = userProfile.uid || userProfile.id;
+      await userService.updateUser(userId, {
         ...profileData,
         photoProfil: photoPreview || profileData.photoProfil
       });
