@@ -1,0 +1,38 @@
+# Labels for Pull Request labeler action
+backend:
+  - 'Microservice/**/*'
+
+frontend:
+  - 'frontend/**/*'
+
+config:
+  - 'config-repo/**/*'
+  - 'docker-compose.yml'
+  - '.github/**/*'
+
+api-gateway:
+  - 'Microservice/APIGateway/**/*'
+
+users-service:
+  - 'Microservice/UsersService/**/*'
+
+produit-service:
+  - 'Microservice/ProduitService/**/*'
+
+order-service:
+  - 'Microservice/OrderService/**/*'
+
+carte-service:
+  - 'Microservice/CarteService/**/*'
+
+paiement-service:
+  - 'Microservice/paiement/**/*'
+
+documentation:
+  - '**/*.md'
+  - 'docs/**/*'
+
+dependencies:
+  - '**/pom.xml'
+  - '**/package.json'
+  - '**/package-lock.json'
