@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../config/firebase';
 import { 
-  signInWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signInWithCustomToken,
   signOut, 
   onAuthStateChanged 
 } from 'firebase/auth';
@@ -18,14 +19,31 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Inscription
+  // Inscription - Le backend crée l'utilisateur dans Firebase ET PostgreSQL
   const register = async (userData) => {
     try {
+      // 1. Le backend crée l'utilisateur dans Firebase ET retourne un custom token
       const response = await userService.register(userData);
-      localStorage.setItem('authToken', response.token);
-      setUserProfile(response.user);
-      return response;
+      
+      // 2. Se connecter avec le custom token retourné par le backend
+      if (response.token) {
+        const userCredential = await signInWithCustomToken(auth, response.token);
+        const idToken = await userCredential.user.getIdToken();
+        localStorage.setItem('authToken', idToken);
+        setCurrentUser(userCredential.user);
+      }
+      
+      // 3. Normaliser le profil
+      const normalizedProfile = { 
+        ...response.user, 
+        uid: response.user?.id || response.user?.uid 
+      };
+      
+      setUserProfile(normalizedProfile);
+      
+      return { user: currentUser, profile: normalizedProfile };
     } catch (error) {
+      console.error('Erreur inscription:', error);
       throw error;
     }
   };

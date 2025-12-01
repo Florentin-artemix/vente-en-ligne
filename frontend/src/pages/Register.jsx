@@ -82,7 +82,19 @@ const Register = () => {
       }
     } catch (err) {
       console.error('Erreur inscription:', err);
-      setError(err.response?.data?.message || 'Erreur lors de l\'inscription');
+      
+      // Messages d'erreur personnalisés pour Firebase
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Cet email est déjà utilisé. Essayez de vous connecter.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Adresse email invalide');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Le mot de passe doit contenir au moins 6 caractères');
+      } else if (err.code === 'auth/operation-not-allowed') {
+        setError('L\'inscription par email/mot de passe n\'est pas activée');
+      } else {
+        setError(err.response?.data?.message || err.message || 'Erreur lors de l\'inscription');
+      }
     } finally {
       setLoading(false);
     }

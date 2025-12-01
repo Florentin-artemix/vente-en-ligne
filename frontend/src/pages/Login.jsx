@@ -52,12 +52,16 @@ const Login = () => {
         setError('Aucun compte associé à cet email');
       } else if (err.code === 'auth/wrong-password') {
         setError('Mot de passe incorrect');
+      } else if (err.code === 'auth/invalid-credential') {
+        setError('Email ou mot de passe incorrect. Vérifiez vos identifiants ou créez un nouveau compte.');
       } else if (err.code === 'auth/invalid-email') {
         setError('Email invalide');
       } else if (err.code === 'auth/too-many-requests') {
         setError('Trop de tentatives. Réessayez plus tard');
+      } else if (err.code === 'auth/user-disabled') {
+        setError('Ce compte a été désactivé');
       } else {
-        setError(err.response?.data?.message || 'Erreur lors de la connexion');
+        setError(err.response?.data?.message || err.message || 'Erreur lors de la connexion');
       }
     } finally {
       setLoading(false);

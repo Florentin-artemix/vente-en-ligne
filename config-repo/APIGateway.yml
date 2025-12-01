@@ -17,9 +17,14 @@ spring:
               - POST
               - PUT
               - DELETE
+              - PATCH
               - OPTIONS
             allowedHeaders: "*"
+            exposedHeaders:
+              - "Authorization"
+              - "Content-Type"
             allowCredentials: true
+            maxAge: 3600
       routes:
         - id: users-service
           uri: lb://UsersService
