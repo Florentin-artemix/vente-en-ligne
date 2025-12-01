@@ -54,13 +54,13 @@ public class ImageController {
             log.error("Erreur lors de l'upload de l'image", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     ImageUploadResponse.builder()
-                            .message("Erreur lors de la lecture du fichier: " + e.getMessage())
+                            .message("Erreur lors de la lecture du fichier")
                             .build());
         } catch (RuntimeException e) {
             log.error("Erreur lors de l'upload vers GitHub", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     ImageUploadResponse.builder()
-                            .message("Erreur lors de l'upload: " + e.getMessage())
+                            .message("Erreur lors de l'upload de l'image")
                             .build());
         }
     }

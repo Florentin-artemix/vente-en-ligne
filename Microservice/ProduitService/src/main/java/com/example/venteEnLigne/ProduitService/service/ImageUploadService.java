@@ -36,6 +36,7 @@ public class ImageUploadService {
 
     private static final String[] ALLOWED_CONTENT_TYPES = {
             "image/jpeg",
+            // "image/jpg" est inclus car certains navigateurs/clients envoient ce type non-standard
             "image/jpg",
             "image/png",
             "image/gif"
@@ -182,8 +183,9 @@ public class ImageUploadService {
         try {
             restTemplate.exchange(url, HttpMethod.PUT, entity, String.class);
         } catch (HttpClientErrorException e) {
-            log.error("Erreur lors de l'upload vers GitHub: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
-            throw new RuntimeException("Erreur lors de l'upload de l'image vers GitHub: " + e.getMessage());
+            // Log sans exposer de détails sensibles de l'API GitHub
+            log.error("Erreur lors de l'upload vers GitHub. Code statut: {}", e.getStatusCode());
+            throw new RuntimeException("Erreur lors de l'upload de l'image vers GitHub");
         }
     }
 
@@ -193,7 +195,9 @@ public class ImageUploadService {
      */
     private HttpHeaders createAuthHeaders() {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("Authorization", "Bearer " + gitHubProperties.getToken());
+        // Le token est passé directement dans le header sans concaténation dans les logs
+        String token = gitHubProperties.getToken();
+        headers.set("Authorization", "Bearer " + token);
         headers.set("Accept", "application/vnd.github.v3+json");
         headers.set("X-GitHub-Api-Version", "2022-11-28");
         return headers;
