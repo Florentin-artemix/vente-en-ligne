@@ -262,7 +262,8 @@ public class WishlistItem {
 @Table(name = "promotions")
 public class Promotion {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(generator = "UUID")
+    @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     private String id;
     private String code;
     private PromotionType type;  // PERCENTAGE, FIXED, FREE_SHIPPING
@@ -807,11 +808,13 @@ import { loadStripe } from '@stripe/stripe-js';
 const stripePromise = loadStripe(process.env.VITE_STRIPE_PUBLIC_KEY);
 
 export const stripeService = {
-  createPaymentIntent: async (amount, currency = 'usd') => {
+  createPaymentIntent: async (amount, currency) => {
+    // currency should come from user preferences or system config
+    const userCurrency = currency || getUserPreferredCurrency() || 'usd';
     const response = await fetch('/api/paiements/create-intent', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount, currency })
+      body: JSON.stringify({ amount, currency: userCurrency })
     });
     return response.json();
   },
@@ -863,82 +866,99 @@ export const fcmService = {
 
 ### 3. Elasticsearch (Backend)
 ```java
-// Configuration Elasticsearch
+// Configuration Elasticsearch (using new ElasticsearchClient - not deprecated RestHighLevelClient)
 @Configuration
 public class ElasticsearchConfig {
     
     @Value("${elasticsearch.host}")
     private String host;
     
+    @Value("${elasticsearch.port:9200}")
+    private int port;
+    
     @Bean
-    public RestHighLevelClient elasticsearchClient() {
-        RestClientBuilder builder = RestClient.builder(
-            new HttpHost(host, 9200, "http")
+    public ElasticsearchClient elasticsearchClient() {
+        RestClient restClient = RestClient.builder(
+            new HttpHost(host, port, "http")
+        ).build();
+        
+        ElasticsearchTransport transport = new RestClientTransport(
+            restClient, new JacksonJsonpMapper()
         );
-        return new RestHighLevelClient(builder);
+        
+        return new ElasticsearchClient(transport);
     }
 }
 
-// Service de recherche
+// Service de recherche avec nouveau client Elasticsearch
 @Service
 public class ElasticSearchService {
     
     @Autowired
-    private RestHighLevelClient client;
+    private ElasticsearchClient client;
     
-    public List<ProductSearchResult> searchProducts(String query, Map<String, Object> filters) {
-        SearchRequest request = new SearchRequest("products");
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
+    public List<ProductSearchResult> searchProducts(String query, Map<String, Object> filters) throws IOException {
+        SearchResponse<ProductDocument> response = client.search(s -> s
+            .index("products")
+            .query(q -> q
+                .bool(b -> {
+                    // Query principale
+                    b.must(m -> m
+                        .multiMatch(mm -> mm
+                            .query(query)
+                            .fields("titre^2", "description", "marque", "categorie")
+                            .fuzziness("AUTO")
+                        )
+                    );
+                    // Filtre status
+                    b.filter(f -> f
+                        .term(t -> t.field("status").value("DISPONIBLE"))
+                    );
+                    // Filtres optionnels
+                    if (filters.containsKey("minPrice")) {
+                        b.filter(f -> f
+                            .range(r -> r.field("prix").gte(JsonData.of(filters.get("minPrice"))))
+                        );
+                    }
+                    if (filters.containsKey("maxPrice")) {
+                        b.filter(f -> f
+                            .range(r -> r.field("prix").lte(JsonData.of(filters.get("maxPrice"))))
+                        );
+                    }
+                    if (filters.containsKey("categorie")) {
+                        b.filter(f -> f
+                            .term(t -> t.field("categorie.keyword").value((String) filters.get("categorie")))
+                        );
+                    }
+                    return b;
+                })
+            )
+            .highlight(h -> h
+                .fields("titre", hf -> hf)
+                .fields("description", hf -> hf)
+            ),
+            ProductDocument.class
+        );
         
-        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery()
-            .must(QueryBuilders.multiMatchQuery(query, "titre", "description", "marque", "categorie")
-                .fuzziness(Fuzziness.AUTO))
-            .filter(QueryBuilders.termQuery("status", "DISPONIBLE"));
-        
-        // Appliquer les filtres
-        if (filters.containsKey("minPrice")) {
-            boolQuery.filter(QueryBuilders.rangeQuery("prix").gte(filters.get("minPrice")));
-        }
-        if (filters.containsKey("maxPrice")) {
-            boolQuery.filter(QueryBuilders.rangeQuery("prix").lte(filters.get("maxPrice")));
-        }
-        if (filters.containsKey("categorie")) {
-            boolQuery.filter(QueryBuilders.termQuery("categorie.keyword", filters.get("categorie")));
-        }
-        
-        sourceBuilder.query(boolQuery);
-        sourceBuilder.highlighter(new HighlightBuilder()
-            .field("titre")
-            .field("description"));
-        
-        request.source(sourceBuilder);
-        
-        try {
-            SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return parseSearchResults(response);
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur recherche Elasticsearch", e);
-        }
+        return parseSearchResults(response);
     }
     
-    public List<String> autocomplete(String prefix) {
-        SearchRequest request = new SearchRequest("products");
-        SearchSourceBuilder sourceBuilder = new SearchSourceBuilder();
-        
-        sourceBuilder.suggest(new SuggestBuilder()
-            .addSuggestion("product-suggest",
-                SuggestBuilders.completionSuggestion("titre.suggest")
+    public List<String> autocomplete(String prefix) throws IOException {
+        SearchResponse<ProductDocument> response = client.search(s -> s
+            .index("products")
+            .suggest(su -> su
+                .suggesters("product-suggest", sg -> sg
                     .prefix(prefix)
-                    .size(10)));
+                    .completion(c -> c
+                        .field("titre.suggest")
+                        .size(10)
+                    )
+                )
+            ),
+            ProductDocument.class
+        );
         
-        request.source(sourceBuilder);
-        
-        try {
-            SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return parseSuggestions(response);
-        } catch (IOException e) {
-            throw new RuntimeException("Erreur autocomplete", e);
-        }
+        return parseSuggestions(response);
     }
 }
 ```
@@ -959,8 +979,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Use explicit allowed origins instead of "*" for security
         registry.addEndpoint("/ws")
-            .setAllowedOrigins("*")
+            .setAllowedOriginPatterns("http://localhost:*", "https://*.yourdomain.com")
             .withSockJS();
     }
 }
@@ -1041,7 +1062,10 @@ public class ChatController {
 
 ### Service Worker (public/sw.js)
 ```javascript
-const CACHE_NAME = 'vente-en-ligne-v1';
+// Cache version should be updated during build process
+// Use environment variable or build-time injection
+const CACHE_VERSION = self.__CACHE_VERSION__ || Date.now();
+const CACHE_NAME = `vente-en-ligne-v${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/index.html',
