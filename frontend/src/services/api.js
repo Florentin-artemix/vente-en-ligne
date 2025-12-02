@@ -110,7 +110,22 @@ export const userService = {
   }
 };
 
-// Service produit
+// Service d'upload d'images
+export const imageService = {
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  }
+};
+
+// Service produits
 export const produitService = {
   // Récupérer tous les produits
   getAllProduits: async (page = 0, size = 10) => {
@@ -349,6 +364,21 @@ export const paiementService = {
   }
 };
 
+// Service d'upload d'images
+export const imageService = {
+  uploadImage: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const response = await api.post('/images/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  }
+};
+
 // Constantes pour les méthodes de paiement
 export const METHODES_PAIEMENT = {
   MPESA: { label: 'M-Pesa', icon: '📱', color: '#00A859' },
@@ -366,4 +396,4 @@ export const PAIEMENT_STATUS = {
   ECHOUE: { label: 'Échoué', color: '#DC3545' }
 };
 
-export default { userService, produitService, orderService, cartService, paiementService };
+export default { userService, produitService, orderService, cartService, paiementService, imageService };
